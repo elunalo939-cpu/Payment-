@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PayFlow – Payment Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --card: #1a2235;
+    --border: #2a3550;
+    --accent: #00e5a0;
+    --accent2: #3b82f6;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #f0f4ff;
+    --muted: #6b7fa3;
+    --radius: 16px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    right: -30%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(0,229,160,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(180deg, #0d1526 0%, transparent 100%);
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--text); }
+
+  .biz-tag {
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 4px;
+    margin: 0 20px 16px;
+    gap: 2px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 9px 6px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    letter-spacing: 0.2px;
+  }
+
+  .tab.active {
+    background: var(--card);
+    color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  /* ── Pages ── */
+  .page { display: none; padding: 0 20px 100px; animation: fadeUp 0.3s ease; }
+  .page.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .stat-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 700; font-family: var(--mono); }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.blue { color: var(--accent2); }
+  .stat-value.warn { color: var(--warn); }
+
+  /* ── Form elements ── */
+  .field { margin-bottom: 14px; }
+  .label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
+
+  .input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input:focus { border-color: var(--accent); }
+  .input::placeholder { color: var(--muted); }
+
+  select.input { appearance: none; cursor: pointer; }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #00b87a);
+    color: #0a0f1e;
+  }
+
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-secondary {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .btn-danger {
+    background: rgba(239,68,68,0.12);
+    border: 1.5px solid rgba(239,68,68,0.3);
+    color: var(--danger);
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .btn-sm {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  /* ── Payment request list ── */
+  .request-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .request-item:last-child { border-bottom: none; }
+
+  .req-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .req-icon.pending { background: rgba(245,158,11,0.15); }
+  .req-icon.paid { background: rgba(0,229,160,0.12); }
+  .req-icon.overdue { background: rgba(239,68,68,0.12); }
+
+  .req-info { flex: 1; min-width: 0; }
+  .req-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .req-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .req-right { text-align: right; flex-shrink: 0; }
+  .req-amount { font-size: 15px; font-weight: 700; font-family: var(--mono); }
+  .req-status { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; margin-top: 4px; display: inline-block; }
+  .status-pending { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .status-paid { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .status-overdue { background: rgba(239,68,68,0.12); color: var(--danger); }
+
+  /* ── Items builder ── */
+  .items-list { margin-bottom: 12px; }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr 70px 70px 32px;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .item-row .input { font-size: 13px; padding: 10px 10px; }
+  .item-total { font-size: 13px; color: var(--accent); font-family: var(--mono); font-weight: 600; text-align: right; }
+
+  .remove-btn {
+    width: 32px;
+    height: 36px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 8px;
+    color: var(--danger);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .total-row .label { margin: 0; font-size: 13px; }
+  .total-row .value { font-family: var(--mono); font-weight: 700; font-size: 14px; }
+  .total-row.grand .label { font-size: 15px; font-weight: 700; color: var(--text); }
+  .total-row.grand .value { font-size: 20px; color: var(--accent); }
+
+  /* ── Modal / Receipt ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    padding: 20px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.3s;
+  }
+
+  .overlay.open .modal { transform: translateY(0); }
+
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+
+  /* ── Receipt ── */
+  .receipt {
+    background: #fff;
+    color: #000;
+    border-radius: 12px;
+    padding: 24px 20px;
+    font-family: var(--mono);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .receipt::before {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: repeating-linear-gradient(90deg, transparent, transparent 10px, var(--surface) 10px, var(--surface) 20px);
+  }
+
+  .receipt-logo { text-align: center; margin-bottom: 4px; }
+  .receipt-logo .r-biz { font-size: 16px; font-weight: 700; font-family: 'DM Serif Display', serif; }
+  .receipt-logo .r-tag { font-size: 10px; color: #555; }
+  .receipt-divider { border: none; border-top: 1px dashed #ccc; margin: 10px 0; }
+  .receipt-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .receipt-row.header { font-size: 10px; color: #888; }
+  .receipt-total-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-top: 4px; }
+  .receipt-meta { font-size: 10px; color: #666; text-align: center; margin-top: 10px; }
+  .receipt-id { font-size: 10px; color: #999; text-align: center; }
+  .receipt-stamp {
+    display: inline-block;
+    border: 2px solid #00b87a;
+    color: #00b87a;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 4px;
+    letter-spacing: 2px;
+    margin: 8px auto;
+    display: block;
+    text-align: center;
+    width: fit-content;
+    margin: 8px auto;
+  }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: rgba(17,24,39,0.95);
+    border-top: 1px solid var(--border);
+    display: flex;
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .nav-btn {
+    flex: 1;
+    padding: 14px 8px 18px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.3px;
+    transition: color 0.2s;
+  }
+
+  .nav-btn .nav-icon { font-size: 20px; }
+  .nav-btn.active { color: var(--accent); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--card);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 300;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 90%;
+    text-align: center;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Section label ── */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text); }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* ── Badge ── */
+  .badge {
+    background: var(--danger);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 22px);
+  }
+
+  .nav-wrap { position: relative; }
+
+  /* ── Print styles ── */
+  @media print {
+    body * { visibility: hidden !important; }
+    .print-area, .print-area * { visibility: visible !important; }
+    .print-area {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: white;
+      z-index: 9999;
+      padding: 20px;
+    }
+    .no-print { display: none !important; }
+  }
+
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .pill.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
+
+  .input-prefix {
+    position: relative;
+  }
+  .input-prefix .pfx {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+  .input-prefix .input { padding-left: 36px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Pay<span>Flow</span></div>
+    <div class="biz-tag" id="bizTag">My Business</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('home')">Dashboard</button>
+  <button class="tab" onclick="switchTab('request')">New Request</button>
+  <button class="tab" onclick="switchTab('history')">History</button>
+  <button class="tab" onclick="switchTab('settings')">Settings</button>
+</div>
+
+<!-- ═══ PAGE: HOME ═══ -->
+<div class="page active" id="page-home">
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Collected</div>
+      <div class="stat-value green" id="statPaid">KES 0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value warn" id="statPending">KES 0</div>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Requests Sent</div>
+      <div class="stat-value blue" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Receipts Printed</div>
+      <div class="stat-value" id="statReceipts">0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">Recent Requests</div>
+      <button class="btn btn-secondary btn-sm" onclick="switchTab('request')">+ New</button>
+    </div>
+    <div id="recentList">
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">No requests yet. Create your first!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: REQUEST ═══ -->
+<div class="page" id="page-request">
+  <div class="card">
+    <div class="card-title">Customer Details</div>
+    <div class="field">
+      <label class="label">Customer Name</label>
+      <input class="input" id="custName" placeholder="e.g. John Kamau" />
+    </div>
+    <div class="field">
+      <label class="label">Phone Number</label>
+      <div class="input-prefix">
+        <span class="pfx">+254</span>
+        <input class="input" id="custPhone" placeholder="7XX XXX XXX" type="tel" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">Email (optional)</label>
+      <input class="input" id="custEmail" placeholder="customer@email.com" type="email" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Payment Method</div>
+    <div class="pill-row">
+      <div class="pill active" onclick="selectMethod(this,'M-Pesa')">📱 M-Pesa</div>
+      <div class="pill" onclick="selectMethod(this,'Cash')">💵 Cash</div>
+      <div class="pill" onclick="selectMethod(this,'Bank')">🏦 Bank</div>
+      <div class="pill" onclick="selectMethod(this,'Card')">💳 Card</div>
+    </div>
+    <div id="mpesaField" class="field">
+      <label class="label">M-Pesa Till / Paybill</label>
+      <input class="input" id="mpesaNum" placeholder="e.g. 522522" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Items / Services</div>
+    <div class="items-list" id="itemsList"></div>
+    <button class="btn btn-secondary" onclick="addItem()" style="margin-bottom:14px;">+ Add Item</button>
+
+    <div class="divider"></div>
+
+    <div class="total-row">
+      <span class="label">Subtotal</span>
+      <span class="value" id="subtotalDisp">KES 0.00</span>
+    </div>
+    <div class="total-row" style="margin:6px 0;">
+      <span class="label">Tax (16% VAT)</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:11px;color:var(--muted);">Apply?</label>
+        <input type="checkbox" id="applyVat" onchange="recalc()" style="width:16px;height:16px;cursor:pointer;">
+      </div>
+      <span class="value" id="vatDisp">KES 0.00</span>
+    </div>
+    <div class="divider"></div>
+    <div class="total-row grand">
+      <span class="label">TOTAL</span>
+      <span class="value" id="grandTotal">KES 0.00</span>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label">Notes / Description</label>
+    <input class="input" id="reqNotes" placeholder="e.g. Payment for cement supply – May 2026" />
+  </div>
+
+  <div class="field">
+    <label class="label">Due Date</label>
+    <input class="input" id="reqDue" type="date" />
+  </div>
+
+  <button class="btn btn-primary" onclick="sendRequest()">📤 Send Payment Request</button>
+  <div style="height:14px;"></div>
+</div>
+
+<!-- ═══ PAGE: HISTORY ═══ -->
+<div class="page" id="page-history">
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">All Transactions</div>
+    </div>
+    <div class="pill-row">
+      <div class="pill active" onclick="filterHistory(this,'all')">All</div>
+      <div class="pill" onclick="filterHistory(this,'pending')">Pending</div>
+      <div class="pill" onclick="filterHistory(this,'paid')">Paid</div>
+      <div class="pill" onclick="filterHistory(this,'overdue')">Overdue</div>
+    </div>
+    <div id="historyList">
+      <div class="empty">
+        <div class="empty-icon">🗂️</div>
+        <div class="empty-text">No transactions yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: SETTINGS ═══ -->
+<div class="page" id="page-settings">
+  <div class="card">
+    <div class="card-title">Business Profile</div>
+    <div class="field">
+      <label class="label">Business Name</label>
+      <input class="input" id="setBizName" placeholder="e.g. EMMANUELS COMPANY LIMITED" />
+    </div>
+    <div class="field">
+      <label class="label">Business Phone</label>
+      <input class="input" id="setBizPhone" placeholder="+254 7XX XXX XXX" />
+    </div>
+    <div class="field">
+      <label class="label">Business Address</label>
+      <input class="input" id="setBizAddr" placeholder="Nairobi, Kenya" />
+    </div>
+    <div class="field">
+      <label class="label">Business Email</label>
+      <input class="input" id="setBizEmail" placeholder="info@yourbiz.co.ke" />
+    </div>
+    <div class="field">
+      <label class="label">Receipt Footer Message</label>
+      <input class="input" id="setBizFooter" placeholder="Thank you for your business!" />
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Save Profile</button>
+  </div>
+
+  <div class="card" style="margin-top:0;">
+    <div class="card-title">Data</div>
+    <button class="btn btn-danger" onclick="clearAll()">🗑️ Clear All Data</button>
+  </div>
+</div>
+
+<!-- ═══ BOTTOM NAV ═══ -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('home')">
+    <span class="nav-icon">🏠</span>Home
+  </button>
+  <button class="nav-btn" onclick="switchTab('request')">
+    <span class="nav-icon">➕</span>Request
+  </button>
+  <div class="nav-wrap" style="flex:1;">
+    <button class="nav-btn" onclick="switchTab('history')" style="width:100%;">
+      <span class="nav-icon">📋</span>History
+    </button>
+    <div class="badge" id="pendingBadge" style="display:none;">!</div>
+  </div>
+  <button class="nav-btn" onclick="switchTab('settings')">
+    <span class="nav-icon">⚙️</span>Settings
+  </button>
+</div>
+
+<!-- ═══ RECEIPT MODAL ═══ -->
+<div class="overlay" id="receiptOverlay" onclick="closeReceipt(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="section-header no-print" style="margin-bottom:16px;">
+      <div class="section-title" style="font-size:16px;">🧾 Receipt</div>
+      <button class="btn btn-secondary btn-sm" onclick="closeReceiptModal()">✕ Close</button>
+    </div>
+
+    <div class="print-area" id="receiptContent"></div>
+
+    <div style="height:16px;"></div>
+    <button class="btn btn-primary no-print" onclick="printReceipt()">🖨️ Print Receipt</button>
+    <div style="height:8px;"></div>
+    <button class="btn btn-secondary no-print" onclick="shareReceipt()">📤 Share via WhatsApp</button>
+  </div>
+</div>
+
+<!-- ═══ REQUEST DETAIL MODAL ═══ -->
+<div class="overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let requests = JSON.parse(localStorage.getItem('pf_requests') || '[]');
+let settings = JSON.parse(localStorage.getItem('pf_settings') || '{}');
+let items = [];
+let payMethod = 'M-Pesa';
+let receiptsCount = parseInt(localStorage.getItem('pf_receipts') || '0');
+let currentFilter = 'all';
+
+// ── Init ──
+function init() {
+  loadSettings();
+  renderAll();
+  addItem();
+  setDefaultDue();
+}
+
+function setDefaultDue() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  document.getElementById('reqDue').value = d.toISOString().split('T')[0];
+}
+
+function loadSettings() {
+  if (settings.bizName) {
+    document.getElementById('bizTag').textContent = settings.bizName;
+    document.getElementById('setBizName').value = settings.bizName || '';
+    document.getElementById('setBizPhone').value = settings.bizPhone || '';
+    document.getElementById('setBizAddr').value = settings.bizAddr || '';
+    document.getElementById('setBizEmail').value = settings.bizEmail || '';
+    document.getElementById('setBizFooter').value = settings.bizFooter || '';
+  }
+}
+
+function saveSettings() {
+  settings = {
+    bizName: document.getElementById('setBizName').value || 'My Business',
+    bizPhone: document.getElementById('setBizPhone').value,
+    bizAddr: document.getElementById('setBizAddr').value,
+    bizEmail: document.getElementById('setBizEmail').value,
+    bizFooter: document.getElementById('setBizFooter').value || 'Thank you for your business!'
+  };
+  localStorage.setItem('pf_settings', JSON.stringify(settings));
+  document.getElementById('bizTag').textContent = settings.bizName;
+  showToast('✅ Profile saved!');
+}
+
+// ── Navigation ──
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  const tabs = ['home','request','history','settings'];
+  const idx = tabs.indexOf(tab);
+  document.querySelectorAll('.tab')[idx]?.classList.add('active');
+  document.querySelectorAll('.nav-btn')[idx]?.classList.add('active');
+  if (tab === 'home') renderRecent();
+  if (tab === 'history') renderHistory();
+}
+
+// ── Items ──
+function addItem() {
+  items.push({ name: '', qty: 1, price: 0 });
+  renderItems();
+}
+
+function removeItem(i) {
+  items.splice(i, 1);
+  if (items.length === 0) addItem();
+  else renderItems();
+}
+
+function renderItems() {
+  const list = document.getElementById('itemsList');
+  list.innerHTML = items.map((it, i) => `
+    <div class="item-row">
+      <input class="input" placeholder="Item name" value="${it.name}" oninput="items[${i}].name=this.value;recalc()">
+      <input class="input" placeholder="Qty" type="number" min="1" value="${it.qty}" oninput="items[${i}].qty=+this.value;recalc()">
+      <input class="input" placeholder="Price" type="number" min="0" value="${it.price||''}" oninput="items[${i}].price=+this.value;recalc()">
+      <button class="remove-btn" onclick="removeItem(${i})">×</button>
+    </div>
+  `).join('');
+  recalc();
+}
+
+function recalc() {
+  const sub = items.reduce((s, it) => s + (it.qty * it.price), 0);
+  const vat = document.getElementById('applyVat').checked ? sub * 0.16 : 0;
+  const total = sub + vat;
+  document.getElementById('subtotalDisp').textContent = fmt(sub);
+  document.getElementById('vatDisp').textContent = fmt(vat);
+  document.getElementById('grandTotal').textContent = fmt(total);
+}
+
+function fmt(n) { return 'KES ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function fmtNum(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+// ── Payment method ──
+function selectMethod(el, method) {
+  document.querySelectorAll('.pill-row .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  payMethod = method;
+  document.getElementById('mpesaField').style.display = method === 'M-Pesa' ? '' : 'none';
+}
+
+// ── Send Request ──
+function sendRequest() {
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  if (!name) { showToast('⚠️ Enter customer name'); return; }
+  if (!phone) { showToast('⚠️ Enter phone number'); return; }
+
+  const validItems = items.filter(it => it.name && it.price > 0);
+  if (validItems.length === 0) { showToast('⚠️ Add at least one item with price'); return; }
+
+  const sub = validItems.reduce((s, it) => s + (it.qty * it.price), 0);
+  const vatOn = document.getElementById('applyVat').checked;
+  const vat = vatOn ? sub * 0.16 : 0;
+  const total = sub + vat;
+
+  const req = {
+    id: 'INV-' + Date.now().toString(36).toUpperCase(),
+    date: new Date().toISOString(),
+    customer: { name, phone: '+254' + phone, email: document.getElementById('custEmail').value },
+    items: validItems,
+    subtotal: sub,
+    vat: vat,
+    total: total,
+    method: payMethod,
+    mpesa: document.getElementById('mpesaNum').value,
+    notes: document.getElementById('reqNotes').value,
+    due: document.getElementById('reqDue').value,
+    status: 'pending'
+  };
+
+  requests.unshift(req);
+  save();
+  renderAll();
+  resetForm();
+  showToast('✅ Payment request created!');
+  switchTab('home');
+}
+
+function resetForm() {
+  ['custName','custPhone','custEmail','reqNotes','mpesaNum'].forEach(id => document.getElementById(id).value = '');
+  items = [];
+  addItem();
+  setDefaultDue();
+  document.getElementById('applyVat').checked = false;
+  recalc();
+}
+
+// ── Save ──
+function save() {
+  localStorage.setItem('pf_requests', JSON.stringify(requests));
+  localStorage.setItem('pf_receipts', receiptsCount);
+}
+
+// ── Render ──
+function renderAll() { renderRecent(); renderHistory(); renderStats(); updateBadge(); }
+
+function renderStats() {
+  const paid = requests.filter(r => r.status === 'paid').reduce((s,r) => s+r.total, 0);
+  const pending = requests.filter(r => r.status === 'pending').reduce((s,r) => s+r.total, 0);
+  document.getElementById('statPaid').textContent = 'KES ' + fmtNum(paid);
+  document.getElementById('statPending').textContent = 'KES ' + fmtNum(pending);
+  document.getElementById('statTotal').textContent = requests.length;
+  document.getElementById('statReceipts').textContent = receiptsCount;
+}
+
+function updateBadge() {
+  const p = requests.filter(r => r.status === 'pending').length;
+  const b = document.getElementById('pendingBadge');
+  b.style.display = p > 0 ? '' : 'none';
+  b.textContent = p;
+}
+
+function renderRecent() {
+  const el = document.getElementById('recentList');
+  const recent = requests.slice(0, 5);
+  if (recent.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No requests yet. Create your first!</div></div>';
+    return;
+  }
+  el.innerHTML = recent.map(r => reqItem(r)).join('');
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  const filtered = currentFilter === 'all' ? requests : requests.filter(r => r.status === currentFilter);
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🗂️</div><div class="empty-text">No transactions found.</div></div>';
+    return;
+  }
+  el.innerHTML = filtered.map(r => reqItem(r)).join('');
+}
+
+function filterHistory(el, f) {
+  currentFilter = f;
+  document.querySelectorAll('#page-history .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory();
+}
+
+function statusIcon(s) {
+  return s === 'paid' ? '✅' : s === 'overdue' ? '🔴' : '🕐';
+}
+
+function reqItem(r) {
+  return `<div class="request-item" onclick="openDetail('${r.id}')">
+    <div class="req-icon ${r.status}">${statusIcon(r.status)}</div>
+    <div class="req-info">
+      <div class="req-name">${r.customer.name}</div>
+      <div class="req-desc">${r.id} · ${r.method}</div>
+    </div>
+    <div class="req-right">
+      <div class="req-amount">${fmt(r.total)}</div>
+      <div class="req-status status-${r.status}">${r.status.toUpperCase()}</div>
+    </div>
+  </div>`;
+}
+
+// ── Detail modal ──
+function openDetail(id) {
+  const r = requests.find(x => x.id === id);
+  if (!r) return;
+  const el = document.getElementById('detailContent');
+  el.innerHTML = `
+    <div class="section-header no-print" style="margin-bottom:16px;">
+      <div class="section-title" style="font-size:16px;">${r.id}</div>
+      <button class="btn btn-secondary btn-sm" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Customer</div>
+      <div style="font-size:15px;font-weight:600;">${r.customer.name}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;">${r.customer.phone}</div>
+      ${r.customer.email ? `<div style="font-size:12px;color:var(--muted);">${r.customer.email}</div>` : ''}
+    </div>
+    <div class="card">
+      <div class="card-title">Items</div>
+      ${r.items.map(it => `
+        <div class="total-row" style="margin-bottom:8px;">
+          <span style="font-size:13px;">${it.name} × ${it.qty}</span>
+          <span style="font-family:var(--mono);font-size:13px;">${fmt(it.qty*it.price)}</span>
+        </div>
+      `).join('')}
+      <div class="divider"></div>
+      <div class="total-row"><span class="label">Subtotal</span><span class="value">${fmt(r.subtotal)}</span></div>
+      ${r.vat > 0 ? `<div class="total-row"><span class="label">VAT 16%</span><span class="value">${fmt(r.vat)}</span></div>` : ''}
+      <div class="total-row grand"><span class="label">TOTAL</span><span class="value">${fmt(r.total)}</span></div>
+    </div>
+    <div class="card">
+      <div class="total-row"><span class="label">Method</span><span class="value" style="font-size:14px;">${r.method}</span></div>
+      ${r.mpesa ? `<div class="total-row"><span class="label">Till/Paybill</span><span class="value" style="font-size:14px;">${r.mpesa}</span></div>` : ''}
+      <div class="total-row"><span class="label">Due</span><span class="value" style="font-size:14px;">${r.due || '–'}</span></div>
+      ${r.notes ? `<div class="total-row"><span class="label">Notes</span><span style="font-size:12px;color:var(--muted);text-align:right;max-width:55%;">${r.notes}</span></div>` : ''}
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      ${r.status !== 'paid' ? `<button class="btn btn-primary" style="flex:1;" onclick="markPaid('${r.id}')">✅ Mark Paid</button>` : ''}
+      <button class="btn btn-secondary" style="flex:1;" onclick="openReceipt('${r.id}')">🧾 Receipt</button>
+    </div>
+    ${r.status !== 'overdue' && r.status !== 'paid' ? `<button class="btn btn-danger" onclick="markOverdue('${r.id}')">⚠️ Mark Overdue</button>` : ''}
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function markPaid(id) {
+  const r = requests.find(x => x.id === id);
+  if (r) { r.status = 'paid'; save(); renderAll(); closeDetailModal(); showToast('✅ Marked as Paid!'); }
+}
+
+function markOverdue(id) {
+  const r = requests.find(x => x.id === id);
+  if (r) { r.status = 'overdue'; save(); renderAll(); closeDetailModal(); showToast('⚠️ Marked as Overdue'); }
+}
+
+function closeDetail(e) { if (e.target === document.getElementById('detailOverlay')) closeDetailModal(); }
+function closeDetailModal() { document.getElementById('detailOverlay').classList.remove('open'); }
+
+// ── Receipt ──
+function openReceipt(id) {
+  const r = requests.find(x => x.id === id);
+  if (!r) return;
+  closeDetailModal();
+  const biz = settings;
+  const dateStr = new Date(r.date).toLocaleString('en-KE', { dateStyle:'medium', timeStyle:'short' });
+
+  document.getElementById('receiptContent').innerHTML = `
+    <div class="receipt">
+      <div class="receipt-logo">
+        <div class="r-biz">${biz.bizName || 'My Business'}</div>
+        <div class="r-tag">${biz.bizAddr || 'Nairobi, Kenya'}</div>
+        <div class="r-tag">${biz.bizPhone || ''} ${biz.bizEmail ? '| ' + biz.bizEmail : ''}</div>
+      </div>
+      <hr class="receipt-divider">
+      <div class="receipt-row">
+        <span>Invoice:</span><span>${r.id}</span>
+      </div>
+      <div class="receipt-row">
+        <span>Date:</span><span>${dateStr}</span>
+      </div>
+      <div class="receipt-row">
+        <span>Customer:</span><span>${r.customer.name}</span>
+      </div>
+      <div class="receipt-row">
+        <span>Phone:</span><span>${r.customer.phone}</span>
+      </div>
+      <hr class="receipt-divider">
+      <div class="receipt-row header">
+        <span>ITEM</span><span>QTY</span><span>PRICE</span><span>TOTAL</span>
+      </div>
+      <hr class="receipt-divider">
+      ${r.items.map(it => `
+        <div class="receipt-row">
+          <span style="max-width:35%;overflow:hidden;text-overflow:ellipsis;">${it.name}</span>
+          <span>${it.qty}</span>
+          <span>${fmtNum(it.price)}</span>
+          <span>${fmtNum(it.qty*it.price)}</span>
+        </div>
+      `).join('')}
+      <hr class="receipt-divider">
+      <div class="receipt-row"><span>Subtotal</span><span>${fmtNum(r.subtotal)}</span></div>
+      ${r.vat > 0 ? `<div class="receipt-row"><span>VAT (16%)</span><span>${fmtNum(r.vat)}</span></div>` : ''}
+      <hr class="receipt-divider">
+      <div class="receipt-total-row"><span>TOTAL (KES)</span><span>${fmtNum(r.total)}</span></div>
+      <hr class="receipt-divider">
+      <div class="receipt-row"><span>Payment:</span><span>${r.method}</span></div>
+      ${r.mpesa ? `<div class="receipt-row"><span>Till/Paybill:</span><span>${r.mpesa}</span></div>` : ''}
+      ${r.notes ? `<div class="receipt-row"><span>Notes:</span><span style="text-align:right;max-width:55%;font-size:10px;">${r.notes}</span></div>` : ''}
+      <div class="receipt-stamp">${r.status.toUpperCase()}</div>
+      <hr class="receipt-divider">
+      <div class="receipt-meta">${biz.bizFooter || 'Thank you for your business!'}</div>
+      <div class="receipt-id">Generated by PayFlow · ${new Date().toLocaleDateString('en-KE')}</div>
+      <div style="height:24px;"></div>
+    </div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('open');
+}
+
+function closeReceipt(e) { if (e.target === document.getElementById('receiptOverlay')) closeReceiptModal(); }
+function closeReceiptModal() { document.getElementById('receiptOverlay').classList.remove('open'); }
+
+function printReceipt() {
+  receiptsCount++;
+  save();
+  renderStats();
+  window.print();
+}
+
+function shareReceipt() {
+  const text = document.getElementById('receiptContent').innerText;
+  const msg = encodeURIComponent('*PayFlow Receipt*\n\n' + text.substring(0, 800));
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Clear data ──
+function clearAll() {
+  if (!confirm('Clear ALL data? This cannot be undone.')) return;
+  requests = [];
+  receiptsCount = 0;
+  save();
+  renderAll();
+  showToast('🗑️ Data cleared');
+}
+
+init();
+</script>
+</body>
+</html>
